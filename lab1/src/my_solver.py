@@ -147,30 +147,8 @@ class MySolver(Solver):
         plt.xlim(np.min(self.x_list[:,0])-2, np.max(self.x_list[:,0])+2)
         plt.ylim(np.min(self.x_list[:,1])-2, np.max(self.x_list[:,1])+2)
         plt.show()
-        
-    # def f(self, x):
-    #   return pow(x,4)/4
-    
-    # def df(self, x):
-    #   return pow(x, 3)
-    
-    # def g(self, x):
-    #   x1 = x[0]
-    #   x2 = x[1]
-    #   return 2 - exp(-pow(x1,2) - pow(x2,2)) - exp(-pow(x1+1.5,2) - pow(x2-2,2))/2
-    
-    # def d_g(self, x):
-    #   x1 = x[0]
-    #   x2 = x[1]
-      
-    #   d_g1 = 2*x1 * exp(-pow(x1,2) - pow(x2,2)) + (x1 + 1.5) * exp(-pow(x1+1.5,2) - pow(x2-2,2))
-    #   d_g2 = 2*x2 * exp(-pow(x1,2) - pow(x2,2)) + (x2 - 2) * exp(-pow(x1+1.5,2) - pow(x2-2,2))
-      
-    #   return np.array([d_g1, d_g2])
     
 if __name__ == '__main__':
-  
-  # solver = MySolver(2, 0.01, 0.001, 0.000001, 1000)
   
   problem1 = [lambda x: pow(x,4)/4, lambda x: pow(x, 3)]
   problem2 = [lambda x: 2 - exp(-pow(x[0],2) - pow(x[1],2)) - exp(-pow(x[0]+1.5,2) - pow(x[1]-2,2))/2,
