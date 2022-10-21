@@ -27,7 +27,7 @@ class MySolver(Solver):
         "max_it": self.max_it,
         "end_it": it,
         "stop_crit": stop_crit,
-        "min_xi": [xi[0], xi[1]],
+        "min_xi": xi,
         "f(min_xi)": fi
       }
       
@@ -64,15 +64,23 @@ class MySolver(Solver):
       # save initial e parameter value
       init_e = self.e 
       
+      # initial algorithm stop criterium
+      stop_crit = 'max iterations'
+      
       for i in range(2, self.max_it):
-        if np.all(abs(gi) > self.eps) or np.linalg.norm(xi - prev_x) > self.eps:
+        print("start")
+        print(f'xi, prev_x: {xi} || {prev_x}')
+        print(x0)
+        print(np.linalg.norm(xi - prev_x))
+        print("stop")
+        if np.all(abs(gi) > self.eps) and np.linalg.norm(xi - prev_x) > self.eps:
           print(xi, i, fi, gi)
           if fi < prev_f:
-            prev_x = xi
+            prev_x = self.x_list[i-1]
             srch_dir = -gi
           else:
-            xi = prev_x
-            # prev_x = self.x_list[i-2,:]
+            xi = self.x_list[i-1]
+            prev_x = self.x_list[i-2]
             fi = f(xi)
             self.e -= self.beta
           xi, fi, gi, prev_f = self.step(xi, srch_dir, fi, f, df)
@@ -106,12 +114,16 @@ class MySolver(Solver):
         plt.scatter(range(1), self.x_list[0], marker='x', color='cyan', s=2, label='start_point')
         plt.scatter(range(0,len(self.x_list)), self.x_list, marker='o', color='black', s=2, label='alg. path')
         plt.scatter(range(1), self.x_list[-1], marker='x', color='red', s=2, label='end point')
+        plt.xlabel('iteration')
+        plt.ylabel('Xi')
         plt.legend()
         
         plt.figure()
         plt.scatter(range(1), self.f_list[0], marker='x', color='cyan', s=2, label='f(start_point)')
         plt.scatter(range(0,len(self.f_list)), self.f_list, marker='o', color='black', s=2, label='f(xi) path')
         plt.scatter(range(1), self.f_list[-1], marker='x', color='red', s=2, label='f(end_point)')
+        plt.xlabel('iteration')
+        plt.ylabel('F(xi)')
         plt.legend()
         plt.yscale('log')
         plt.show()
@@ -157,12 +169,12 @@ if __name__ == '__main__':
                 2*x[1] * exp(-pow(x[0],2) - pow(x[1],2)) + (x[1] - 2) * exp(-pow(x[0]+1.5,2) - pow(x[1]-2,2))
               ])]
   
-  solver1d = MySolver(e=0.1, beta=0.001, eps=0.001, max_it=1000)
+  solver1d = MySolver(e=0.1, beta=0.001, eps=0.00001, max_it=1000)
   
   solver2d = MySolver(e=0.2, beta=0.001, eps=0.000001, max_it=1000)
   
-  # solution = solver1d.solve(problem1, 3.5)
-  solution = solver2d.solve(problem2, np.array([2,1]))
+  # solution = solver1d.solve(problem1, 2.5)
+  solution = solver2d.solve(problem2, np.array([2,-2]))
   
   print(solution)
   
