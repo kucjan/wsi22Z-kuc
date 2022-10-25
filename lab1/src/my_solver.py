@@ -2,7 +2,6 @@ from solver import Solver
 from math import exp
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 
 class MySolver(Solver):
@@ -74,7 +73,7 @@ class MySolver(Solver):
             prev_x = self.x_list[i-1]
             srch_dir = -gi
           else:
-            xi = self.x_list[i-1]
+            xi -= srch_dir
             prev_x = self.x_list[i-2]
             fi = f(xi)
             self.e -= self.beta
@@ -85,15 +84,13 @@ class MySolver(Solver):
           else:
             stop_crit = "no improvement"
           break
-
-      print(f'MIN x: {xi}')
-      print(f'F(min_x): {fi}')
       
       self.generate_plots(type(x0) != np.ndarray, f)
       
       return self.get_parameters(x0, init_e, i, stop_crit, xi, fi)
          
     def step(self, xi, srch_dir, fi, f, df):
+      """A method that executes one step of algorithm and saves historical data"""
       xi += self.e*srch_dir
       prev_f = fi
       fi = f(xi)
@@ -104,6 +101,7 @@ class MySolver(Solver):
       return xi, fi, gi, prev_f
     
     def generate_plots(self, is_1d, f):
+      """A method that generates, displays and saves proper plots for exact problems"""
       if is_1d:
         fig1 = plt.figure()
         plt.scatter(self.x_list[0], self.f_list[0], marker='x', color="c", s=10, label='start point')
@@ -117,8 +115,7 @@ class MySolver(Solver):
         plt.xlabel('xi')
         plt.ylabel('F(xi)')
         plt.legend()
-        fig1_name = f'traj_{self.x_list[0]}_{self.e}.pdf'
-        fig1.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig1_name}')
+        fig1_name = f'traj_{self.x_list[0]}_{self.e}_{self.eps}.pdf'
         
         fig2 = plt.figure()
         plt.scatter(0, self.f_list[0], marker='x', color='cyan', s=10, label='f(start point)')
@@ -128,9 +125,10 @@ class MySolver(Solver):
         plt.ylabel('F(xi)')
         plt.legend()
         plt.yscale('log')
-        fig2_name = f'fcel_log_{self.x_list[0]}_{self.e}.pdf'
-        fig2.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig2_name}')
+        fig2_name = f'fcel_log_{self.x_list[0]}_{self.e}_{self.eps}.pdf'
         plt.show()
+        # fig1.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig1_name}')
+        # fig2.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig2_name}')
       else:
         fig1, ax = plt.subplots(subplot_kw={"projection": "3d"})
         x = np.linspace(-5, 5, 101)
@@ -150,8 +148,7 @@ class MySolver(Solver):
         ax.set_zlabel('F(x1,x2)')
         ax.set_zlim(0.9*np.min(Z), 1.1*np.max(Z))
         fig1.colorbar(surf, shrink=0.5, aspect=5)
-        fig1_name = f'surf_{self.x_list[0]}_{self.e}.pdf'
-        fig1.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig1_name}')
+        fig1_name = f'surf_{self.x_list[0]}_{self.e}_{self.eps}.pdf'
         
         fig2 = plt.figure()
         plt.contour(X, Y, Z, alpha=0.6)
@@ -164,9 +161,10 @@ class MySolver(Solver):
         plt.ylabel('x2')
         plt.xlim(np.min(self.x_list[:,0])-2, np.max(self.x_list[:,0])+2)
         plt.ylim(np.min(self.x_list[:,1])-2, np.max(self.x_list[:,1])+2)
-        fig2_name = f'contour_{self.x_list[0]}_{self.e}.pdf'
-        fig2.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig2_name}')
+        fig2_name = f'contour_{self.x_list[0]}_{self.e}_{self.eps}.pdf'
         plt.show()
+        # fig1.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig1_name}')
+        # fig2.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig2_name}')
     
 if __name__ == '__main__':
   
@@ -177,12 +175,11 @@ if __name__ == '__main__':
                 2*x[1] * exp(-pow(x[0],2) - pow(x[1],2)) + (x[1] - 2) * exp(-pow(x[0]+1.5,2) - pow(x[1]-2,2))
               ])]
   
-  solver1d = MySolver(e=1, beta=0.01, eps=0.00001, max_it=10000)
+  # solver1d = MySolver(e=0.9, beta=0.01, eps=0.0000001, max_it=10000)
+  # solution = solver1d.solve(problem1, -1.5)
   
-  solver2d = MySolver(e=0.2, beta=0.001, eps=0.000001, max_it=1000)
-  
-  solution = solver1d.solve(problem1, -1.5)
-  # solution = solver2d.solve(problem2, np.array([2,-2]))
+  solver2d = MySolver(e=0.001, beta=0.01, eps=0.000001, max_it=10000)
+  solution = solver2d.solve(problem2, np.array([0.2,0.6]))
   
   print(solution)
   
