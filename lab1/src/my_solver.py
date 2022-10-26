@@ -67,7 +67,7 @@ class MySolver(Solver):
       
       for i in range(2, self.max_it+1):
         if np.all(abs(gi) > self.eps) and np.linalg.norm(xi - prev_x) > self.eps:
-          print(xi, i, fi, gi)
+          print(f'it: {i}  xi: {xi}  fi: {fi}  gi: {gi}')
           if fi < prev_f:
             prev_x = self.x_list[i-1]
             srch_dir = -gi
@@ -84,7 +84,7 @@ class MySolver(Solver):
             stop_crit = "no improvement"
           break
       
-      generate_plots(self.x_list, self.f_list, self.e, type(x0) != np.ndarray, f)
+      generate_plots(self.x_list, self.f_list, type(x0) != np.ndarray, f)
       
       return self.get_parameters(x0, init_e, i, stop_crit, xi, fi)
          
@@ -109,10 +109,10 @@ if __name__ == '__main__':
               ])]
   
   solver1d = MySolver(e=0.9, beta=0.9, eps=0.00001, max_it=10000)
-  solution = solver1d.solve(problem1, -1.5)
+  solution1d = solver1d.solve(problem1, -1.5)
+  print(solution1d)
   
-  # solver2d = MySolver(e=0.001, beta=0.9, eps=0.000001, max_it=10000)
-  # solution = solver2d.solve(problem2, np.array([0.2,0.6]))
-  
-  print(solution)
+  solver2d = MySolver(e=0.05, beta=0.9, eps=0.000001, max_it=10000)
+  solution2d = solver2d.solve(problem2, np.array([-2.3,-1.8]))
+  print(solution2d)
   
