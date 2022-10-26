@@ -1,8 +1,7 @@
 from solver import Solver
 from math import exp
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import cm
+from plotter import generate_plots
 
 class MySolver(Solver):
 
@@ -76,7 +75,7 @@ class MySolver(Solver):
             xi -= srch_dir
             prev_x = self.x_list[i-2]
             fi = f(xi)
-            self.e -= self.beta
+            self.e *= self.beta
           xi, fi, gi, prev_f = self.step(xi, srch_dir, fi, f, df)
         else:
           if np.all(abs(gi) <= self.eps):
@@ -85,7 +84,7 @@ class MySolver(Solver):
             stop_crit = "no improvement"
           break
       
-      self.generate_plots(type(x0) != np.ndarray, f)
+      generate_plots(self.x_list, self.f_list, self.e, type(x0) != np.ndarray, f)
       
       return self.get_parameters(x0, init_e, i, stop_crit, xi, fi)
          
@@ -100,72 +99,6 @@ class MySolver(Solver):
       self.g_list = np.vstack([self.g_list, gi])
       return xi, fi, gi, prev_f
     
-    def generate_plots(self, is_1d, f):
-      """A method that generates, displays and saves proper plots for exact problems"""
-      if is_1d:
-        fig1 = plt.figure()
-        plt.scatter(self.x_list[0], self.f_list[0], marker='x', color="c", s=10, label='start point')
-        plt.scatter(self.x_list[1:-2], self.f_list[1:-2], marker='o', color="k", s=1, label='alg. path')
-        plt.scatter(self.x_list[-1], self.f_list[-1], marker='x', color="r", s=10, label='end point')
-        iters = np.linspace(self.x_list[0], self.x_list[-1], 101)
-        f_iters = []
-        for it in iters:
-          f_iters.append(f(it))
-        plt.plot(iters, f_iters, color="b", alpha=0.3, label='f(x)')
-        plt.xlabel('xi')
-        plt.ylabel('F(xi)')
-        plt.legend()
-        fig1_name = f'traj_{self.x_list[0]}_{self.e}_{self.eps}.pdf'
-        
-        fig2 = plt.figure()
-        plt.scatter(0, self.f_list[0], marker='x', color='cyan', s=10, label='f(start point)')
-        plt.scatter(range(1,len(self.f_list)-1), self.f_list[1:-1], marker='o', color='black', s=1, label='f(xi) path')
-        plt.scatter(len(self.x_list), self.f_list[-1], marker='x', color='red', s=10, label='f(end point)')
-        plt.xlabel('iteration')
-        plt.ylabel('F(xi)')
-        plt.legend()
-        plt.yscale('log')
-        fig2_name = f'fcel_log_{self.x_list[0]}_{self.e}_{self.eps}.pdf'
-        plt.show()
-        # fig1.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig1_name}')
-        # fig2.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig2_name}')
-      else:
-        fig1, ax = plt.subplots(subplot_kw={"projection": "3d"})
-        x = np.linspace(-5, 5, 101)
-        y = np.linspace(-5, 5, 101)
-        X, Y = np.meshgrid(x, y)
-        Z = np.zeros(X.shape)
-        for i in range(len(x)):
-          for j in range(len(y)):
-            Z[i,j] = f([x[i],y[j]])
-        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, linewidth=0, antialiased=False, alpha=0.3)
-        ax.scatter(self.x_list[0,0], self.x_list[0,1], self.f_list[0], color='cyan', s=6, label='start point')
-        ax.scatter(self.x_list[1:-2,0], self.x_list[1:-2,1], self.f_list[1:-2], color='black', s=2, label='alg. path')
-        ax.scatter(self.x_list[-1,0], self.x_list[-1,1], self.f_list[-1], color='red', s=6, label='end point')
-        ax.legend(loc='upper left')
-        ax.set_xlabel('x1')
-        ax.set_ylabel('x2')
-        ax.set_zlabel('F(x1,x2)')
-        ax.set_zlim(0.9*np.min(Z), 1.1*np.max(Z))
-        fig1.colorbar(surf, shrink=0.5, aspect=5)
-        fig1_name = f'surf_{self.x_list[0]}_{self.e}_{self.eps}.pdf'
-        
-        fig2 = plt.figure()
-        plt.contour(X, Y, Z, alpha=0.6)
-        plt.colorbar()
-        plt.scatter(self.x_list[0,0], self.x_list[0,1], color='cyan', s=5, label='start point')
-        plt.scatter(self.x_list[1:-2,0], self.x_list[1:-2,1], color='black', s=3, label='alg. path')
-        plt.scatter(self.x_list[-1,0], self.x_list[-1,1], color='red', s=5, label='end point')
-        plt.legend(loc='upper left')
-        plt.xlabel('x1')
-        plt.ylabel('x2')
-        plt.xlim(np.min(self.x_list[:,0])-2, np.max(self.x_list[:,0])+2)
-        plt.ylim(np.min(self.x_list[:,1])-2, np.max(self.x_list[:,1])+2)
-        fig2_name = f'contour_{self.x_list[0]}_{self.e}_{self.eps}.pdf'
-        plt.show()
-        # fig1.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig1_name}')
-        # fig2.savefig(f'/Users/janekkuc/Desktop/PW/Sem7/WSI/wykresy_lab1/{fig2_name}')
-    
 if __name__ == '__main__':
   
   problem1 = [lambda x: pow(x,4)/4, lambda x: pow(x, 3)]
@@ -175,11 +108,11 @@ if __name__ == '__main__':
                 2*x[1] * exp(-pow(x[0],2) - pow(x[1],2)) + (x[1] - 2) * exp(-pow(x[0]+1.5,2) - pow(x[1]-2,2))
               ])]
   
-  # solver1d = MySolver(e=0.9, beta=0.01, eps=0.0000001, max_it=10000)
-  # solution = solver1d.solve(problem1, -1.5)
+  solver1d = MySolver(e=0.9, beta=0.9, eps=0.00001, max_it=10000)
+  solution = solver1d.solve(problem1, -1.5)
   
-  solver2d = MySolver(e=0.001, beta=0.01, eps=0.000001, max_it=10000)
-  solution = solver2d.solve(problem2, np.array([0.2,0.6]))
+  # solver2d = MySolver(e=0.001, beta=0.9, eps=0.000001, max_it=10000)
+  # solution = solver2d.solve(problem2, np.array([0.2,0.6]))
   
   print(solution)
   
