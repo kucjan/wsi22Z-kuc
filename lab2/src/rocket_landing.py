@@ -1,5 +1,14 @@
 from random import randint, shuffle
 
+def count(fn):
+  def wrapper(*args, **kwargs):
+    wrapper.called += 1
+    return fn(*args, **kwargs)
+  wrapper.called = 0
+  wrapper.__name__ = fn.__name__
+  return wrapper
+
+@count
 def land_rocket(plan): # input argument is vector of '0's or '1's defining if rocket engine is working or not in given step
   """A method that simulates rocket landing and returns gain of mission"""
   

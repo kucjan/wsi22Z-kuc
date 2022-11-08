@@ -6,12 +6,10 @@ from plotter import plot_alg_run
 
 class MySolver(Solver):
   
-  def __init__(self, pc, pm, max_it, max_evals):
+  def __init__(self, pc, pm, max_it):
     self.pc = pc  # probability of crossing
     self.pm = pm  # probability of mutation
     self.max_it = max_it
-    self.eval_counter = 0
-    self.max_evals = max_evals
     self.best_vals = []
     self.max_vals = []
     self.min_vals = []
@@ -35,6 +33,7 @@ class MySolver(Solver):
     """A method to execute main loop of genetic algorithm"""
     
     MAX_REPEAT = 300 # max number of iterations with same solution
+    MAX_EVALS = 100000 # max number of evaluations of objective function (fixed budget)
     
     f_vals, best_chrom, best_val = self.rate_population(problem, pop0)
     generation = pop0
@@ -42,9 +41,10 @@ class MySolver(Solver):
     rep = 0
     print('i: {}  best_val: {}  min_val: {}  max_val: {}  mean_val: {}'
       .format(i, best_val, min(f_vals), max(f_vals), sum(f_vals)/len(f_vals)))
-    while i < self.max_it and rep < MAX_REPEAT and self.eval_counter < self.max_evals:
+    while i < self.max_it and rep < MAX_REPEAT and problem.called < MAX_EVALS:
       selection = self.roulette_selection(f_vals, generation)
       generation = self.cross_and_mutate(selection, self.pc, self.pm)
+      print(problem.called)
       f_vals, new_chrom, new_val = self.rate_population(problem, generation)
       if new_val > best_val:
         best_chrom = new_chrom
@@ -68,6 +68,7 @@ class MySolver(Solver):
 
   def rate_population(self, problem, population):
     """A method that calculates objective function values for all chromosoms of generation"""
+
     best_chrom = population[0]; best_val = problem(population[0])
     f_vals = [best_val]
     for chrom in population[1:]:
@@ -82,7 +83,6 @@ class MySolver(Solver):
     """A method to execute roullete selection of population"""
     
     probs = []; sum_values = 0; next_gen = []
-    count_tab = []
     cons = min(values) if min(values) < 0 else 0
     sum_values = sum(values) + cons*len(values)
     
@@ -97,7 +97,6 @@ class MySolver(Solver):
       for i in range(len(population)):
         if probs[i][0] < rand <= probs[i][1]:
           next_gen.append(population[i])
-          count_tab.append(i)
         
     return next_gen
   
@@ -125,10 +124,10 @@ class MySolver(Solver):
   
 if __name__ == '__main__':
   
-  pop0 = generate_population(200, 500)
+  pop0 = generate_population(chrom_size=200, pop_size=500)
   
-  solver1 = MySolver(0.8, 0.4, 2000, 100)
+  solver1 = MySolver(pc=0.85, pm=0.15, max_it=2000)
   
-  solution = solver1.solve(land_rocket, pop0)
+  solution = solver1.solve(problem=land_rocket, pop0=pop0)
   
   print(solution)
