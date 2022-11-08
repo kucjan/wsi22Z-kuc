@@ -10,7 +10,7 @@ def land_rocket(plan): # input argument is vector of '0's or '1's defining if ro
   LANDING_VELOCITY = 2
   CRASH_HEIGHT = 0
   ACC_FACTOR = 45
-  G = -0.009
+  G = -0.09
   
   # initial parameters of mission
   h = 200; v = 0; m = 200; a = 0
@@ -24,8 +24,9 @@ def land_rocket(plan): # input argument is vector of '0's or '1's defining if ro
     gain -= unit
   
   for i in range(len(plan)):
-    if h < LANDING_HEIGHT and abs(v) < LANDING_VELOCITY:
+    if CRASH_HEIGHT <= h < LANDING_HEIGHT and abs(v) < LANDING_VELOCITY:
       gain += LANDING_PRIZE
+      # print("LANDED")
       return gain
     elif h < CRASH_HEIGHT:
       gain += CRASH_PENALTY
@@ -34,8 +35,9 @@ def land_rocket(plan): # input argument is vector of '0's or '1's defining if ro
       if plan[i]:
         m -= 1
         a = ACC_FACTOR/m
-      v += (a + G)
-      h -= v
+        v += a
+      v += G
+      h += v
   
   return gain
 
