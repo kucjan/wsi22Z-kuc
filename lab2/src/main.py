@@ -27,7 +27,7 @@ if __name__ == '__main__':
     
     solver1 = MySolver(pc=PC, pm=PM, max_it=MAX_ITERATIONS)
     
-    solution, best_vals_i, max_vals_i = solver1.solve(problem=land_rocket, pop0=pop0, show_plots=False)
+    solution, best_vals_i, max_vals_i = solver1.solve(problem=land_rocket, pop0=pop0, group_sim=True)
     
     solution_values.append(solution['best_value'])
     

@@ -35,7 +35,6 @@ def land_rocket(plan): # input argument is vector of '0's or '1's defining if ro
   for i in range(len(plan)):
     if CRASH_HEIGHT <= h < LANDING_HEIGHT and abs(v) < LANDING_VELOCITY:
       gain += LANDING_PRIZE
-      # print("LANDED")
       return gain
     elif h < CRASH_HEIGHT:
       gain += CRASH_PENALTY

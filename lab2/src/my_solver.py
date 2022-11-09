@@ -30,7 +30,7 @@ class MySolver(Solver):
     
     return params
   
-  def solve(self, problem, pop0, show_plots):
+  def solve(self, problem, pop0, group_sim):
     """A method to execute main loop of genetic algorithm"""
     MAX_REPEAT = 1000 # max number of iterations with same solution
     MAX_EVALS = 1000000 # max number of evaluations of objective function (fixed budget)
@@ -65,14 +65,15 @@ class MySolver(Solver):
       i += 1
       print('i: {}  best_val: {}  min_val: {}  max_val: {}  mean_val: {}'
             .format(i, best_val, min(f_vals), max(f_vals), sum(f_vals)/len(f_vals)))
-      # if rep >= MAX_REPEAT:
-      #   stop_crit = "max repeatitions"
-      #   break
-      # elif problem.called >= MAX_EVALS:
-      #   stop_crit = "max obj_fun evaluations"
-      #   break
+      if not group_sim:
+        if rep >= MAX_REPEAT:
+          stop_crit = "max repeatitions"
+          break
+        elif problem.called >= MAX_EVALS:
+          stop_crit = "max obj_fun evaluations"
+          break
       
-    if show_plots: plot_alg_run(self.best_vals, self.max_vals, self.min_vals, self.avg_vals, self.pc, self.pm, len(pop0))
+    if not group_sim: plot_alg_run(self.best_vals, self.max_vals, self.min_vals, self.avg_vals, self.pc, self.pm, len(pop0))
         
     return self.get_parameters(len(pop0), MAX_REPEAT, best_val, best_chrom, i, stop_crit), np.array(self.best_vals), np.array(self.max_vals)
 
@@ -132,10 +133,10 @@ class MySolver(Solver):
   
 if __name__ == '__main__':
   
-  pop0 = generate_population(chrom_size=200, pop_size=800)
+  pop0 = generate_population(chrom_size=200, pop_size=500)
   
-  solver1 = MySolver(pc=0.9, pm=0.2, max_it=5000)
+  solver1 = MySolver(pc=0.6, pm=0.1, max_it=5000)
   
-  solution, best_vals, max_vals = solver1.solve(problem=land_rocket, pop0=pop0, show_plots=True)
+  solution, best_vals, max_vals = solver1.solve(problem=land_rocket, pop0=pop0, group_sim=False)
   
   print(solution)
