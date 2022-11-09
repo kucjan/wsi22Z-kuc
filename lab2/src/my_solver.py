@@ -1,7 +1,7 @@
 from solver import Solver
 from rocket_landing import land_rocket, generate_population
 import numpy as np
-from random import uniform, randint
+from random import randint, random
 from plotter import plot_alg_run
 
 class MySolver(Solver):
@@ -15,7 +15,7 @@ class MySolver(Solver):
     self.min_vals = []
     self.avg_vals = []
     
-  def get_parameters(self, problem_size, max_repeat, best_value, best_chrom, iterations):
+  def get_parameters(self, problem_size, max_repeat, best_value, best_chrom, iterations, stop_crit):
     params = {
       "cross_probability": self.pc,
       "mutation_probability": self.pm,
@@ -24,27 +24,33 @@ class MySolver(Solver):
       "problem_size": problem_size,
       "best_value": best_value,
       "best_chrom": best_chrom,
-      "num_of_iter": iterations
+      "num_of_iter": iterations,
+      "stop_crit": stop_crit
     }
     
     return params
   
-  def solve(self, problem, pop0):
+  def solve(self, problem, pop0, show_plots):
     """A method to execute main loop of genetic algorithm"""
-    
-    MAX_REPEAT = 300 # max number of iterations with same solution
-    MAX_EVALS = 100000 # max number of evaluations of objective function (fixed budget)
+    MAX_REPEAT = 1000 # max number of iterations with same solution
+    MAX_EVALS = 1000000 # max number of evaluations of objective function (fixed budget)
+  
+    i = 0; rep = 0  # initialize iterations and repeatitive iterations counters
+    stop_crit = "max iterations"
     
     f_vals, best_chrom, best_val = self.rate_population(problem, pop0)
+    self.best_vals.append(best_val)
+    self.max_vals.append(max(f_vals))
+    self.min_vals.append(min(f_vals))
+    self.avg_vals.append(sum(f_vals)/len(f_vals))
     generation = pop0
-    i = 0
-    rep = 0
-    print('i: {}  best_val: {}  min_val: {}  max_val: {}  mean_val: {}'
+  
+    print('i: {}  best_val: {}  min_val: {}  max_val: {}  avg_val: {}'
       .format(i, best_val, min(f_vals), max(f_vals), sum(f_vals)/len(f_vals)))
-    while i < self.max_it and rep < MAX_REPEAT and problem.called < MAX_EVALS:
+    
+    for i in range(1, self.max_it):
       selection = self.roulette_selection(f_vals, generation)
       generation = self.cross_and_mutate(selection, self.pc, self.pm)
-      print(problem.called)
       f_vals, new_chrom, new_val = self.rate_population(problem, generation)
       if new_val > best_val:
         best_chrom = new_chrom
@@ -53,22 +59,25 @@ class MySolver(Solver):
       else:
         rep += 1
       self.best_vals.append(best_val)
-      # self.max_vals.append((max(f_vals), np.argmax(f_vals)))
-      # self.min_vals.append((min(f_vals), np.argmin(f_vals)))
       self.max_vals.append(max(f_vals))
       self.min_vals.append(min(f_vals))
       self.avg_vals.append(sum(f_vals)/len(f_vals))
       i += 1
       print('i: {}  best_val: {}  min_val: {}  max_val: {}  mean_val: {}'
             .format(i, best_val, min(f_vals), max(f_vals), sum(f_vals)/len(f_vals)))
+      # if rep >= MAX_REPEAT:
+      #   stop_crit = "max repeatitions"
+      #   break
+      # elif problem.called >= MAX_EVALS:
+      #   stop_crit = "max obj_fun evaluations"
+      #   break
       
-    plot_alg_run(self.best_vals, self.max_vals, self.min_vals, self.avg_vals)
+    if show_plots: plot_alg_run(self.best_vals, self.max_vals, self.min_vals, self.avg_vals, self.pc, self.pm, len(pop0))
         
-    return self.get_parameters(len(pop0), MAX_REPEAT, best_val, best_chrom, i)
+    return self.get_parameters(len(pop0), MAX_REPEAT, best_val, best_chrom, i, stop_crit), np.array(self.best_vals), np.array(self.max_vals)
 
   def rate_population(self, problem, population):
     """A method that calculates objective function values for all chromosoms of generation"""
-
     best_chrom = population[0]; best_val = problem(population[0])
     f_vals = [best_val]
     for chrom in population[1:]:
@@ -81,9 +90,8 @@ class MySolver(Solver):
   
   def roulette_selection(self, values, population):
     """A method to execute roullete selection of population"""
-    
     probs = []; sum_values = 0; next_gen = []
-    cons = min(values) if min(values) < 0 else 0
+    cons = -min(values) if min(values) < 0 else 0
     sum_values = sum(values) + cons*len(values)
     
     prev_prob = 0
@@ -91,9 +99,9 @@ class MySolver(Solver):
       new_prob = prev_prob + (v+cons)/sum_values
       probs.append((prev_prob, new_prob))
       prev_prob = new_prob
-    
+      
     while len(next_gen) < len(population):
-      rand = uniform(0.0, 1.0)
+      rand = random()
       for i in range(len(population)):
         if probs[i][0] < rand <= probs[i][1]:
           next_gen.append(population[i])
@@ -105,7 +113,7 @@ class MySolver(Solver):
     chrom_size = len(gen[0])
     it = iter(range(len(gen)))
     for i, j in zip(it, it):
-      if uniform(0.0, 1.0) <= pc:
+      if random() <= pc:
         cut = randint(0, chrom_size-1)
         new_chrom1 = gen[i][0:cut]; new_chrom2 = gen[j][0:cut]
         new_chrom1.extend(gen[j][cut:]); new_chrom2.extend(gen[i][cut:])
@@ -119,15 +127,15 @@ class MySolver(Solver):
   def mutate(self, chrom, pm):
     """A method to execute mutation on single chromosome"""
     for i in range(len(chrom)):
-      if uniform(0.0, 1.0) <= pm:
+      if random() <= pm:
         chrom[i] = 1 - chrom[i]
   
 if __name__ == '__main__':
   
-  pop0 = generate_population(chrom_size=200, pop_size=500)
+  pop0 = generate_population(chrom_size=200, pop_size=800)
   
-  solver1 = MySolver(pc=0.85, pm=0.15, max_it=2000)
+  solver1 = MySolver(pc=0.9, pm=0.2, max_it=5000)
   
-  solution = solver1.solve(problem=land_rocket, pop0=pop0)
+  solution, best_vals, max_vals = solver1.solve(problem=land_rocket, pop0=pop0, show_plots=True)
   
   print(solution)
