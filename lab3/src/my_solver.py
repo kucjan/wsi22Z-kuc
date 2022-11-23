@@ -1,9 +1,9 @@
 import sys
 from math import inf
 from itertools import combinations
-from random import randint
-from time import sleep
+from random import randint, choice
 import copy
+from time import sleep
 
 PATH = "/Users/janekkuc/Desktop/PW/Sem7/WSI/wsi22Z-kuc/lab3/two-player-games"
 sys.path.append(PATH)
@@ -23,7 +23,7 @@ class PlayPick(object):
     
   def minimax_ab(self, state, depth, is_maximizing, alpha=-inf, beta=inf):
     if depth == 0 or state.is_finished():
-      return (self.h(state), None)
+      return (self.h(state, is_maximizing), None)
     
     moves = state.get_moves()
     values = []
@@ -31,33 +31,40 @@ class PlayPick(object):
     if is_maximizing:
       value = -inf
       for move in moves:
-         # save searched states count to evaluate quality of algorithm in report
-        self.searched_states_max += 1
+        self.count_states()
         new_state = copy.deepcopy(state)
         value = max(value, self.minimax_ab(new_state.make_move(move), depth-1, False, alpha, beta)[0])
         alpha = max(alpha, value)
         values.append(alpha)
         if alpha >= beta:
-          turn_choice = values.index(alpha)
-          return (beta, moves[turn_choice])
-      turn_choice = values.index(alpha)
+          break
+      turn_choice = self.choose_move(values, alpha)
       return (alpha, moves[turn_choice])
     else:
       value = inf
       for move in moves:
-        # save searched states count to evaluate quality of algorithm in report
-        self.searched_states_min += 1
+        self.count_states()
         new_state = copy.deepcopy(state)
         value = min(value, self.minimax_ab(new_state.make_move(move), depth-1, True, alpha, beta)[0])
         beta = min(beta, value)
         values.append(beta)
         if alpha >= beta:
-          turn_choice = values.index(beta)
-          return (alpha, moves[turn_choice])
-      turn_choice = values.index(beta)
+          break
+      turn_choice = self.choose_move(values, beta)
       return (beta, moves[turn_choice])
     
-  def h(self, state):
+  def choose_move(self, moves, value):
+    same_moves = [i for i, v in enumerate(moves) if v == value]
+    return choice(same_moves)
+    
+  def count_states(self):
+    """Method to count searched states to evaluate quality of algorithm in report"""
+    if self.max_turn:
+      self.searched_states_max += 1
+    else:
+      self.searched_states_min += 1
+    
+  def h(self, state, is_max=True):
     if state.is_finished():
       winner = state.get_winner()
       if winner is not None:
@@ -70,17 +77,27 @@ class PlayPick(object):
     elif len(state.current_player_numbers) < state.n-1:
       return 0
     else:
-      options = list(combinations(state.current_player_numbers, state.n-1))
-      wins = set()
-      for option in options:
-        winning_number = state.aim_value - sum(option)
-        if winning_number not in state.selected_numbers:
-          wins.add(winning_number)
-      return len(wins)
+      current_player_wins = self.heur_eval(state, True)
+      opposite_player_wins = self.heur_eval(state, False)
+      if is_max: return current_player_wins - opposite_player_wins
+      else: return -(current_player_wins - opposite_player_wins)
+  
+  def heur_eval(self, state, current):
+    if current: numbers = state.current_player_numbers
+    else: numbers = state.other_player_numbers
+    options = list(combinations(numbers, state.n-1))
+    wins = set()
+    for option in options:
+      winning_number = state.aim_value - sum(option)
+      if winning_number not in state.selected_numbers and (0 < winning_number <= state.max_number):
+        wins.add(winning_number)
+    return len(wins)
     
   def max_min_move(self, depth, is_max):
     if depth >= 0:
-      _, move = self.minimax_ab(state=self.game.state, depth=depth, is_maximizing=is_max)
+      value, move = self.minimax_ab(state=self.game.state, depth=depth, is_maximizing=is_max)
+      print(value)
+      print(f'PLAYER CHOICE: {move.number}')
       self.game.state = self.game.state.make_move(move)
     else:
       moves = self.game.state.get_moves()
@@ -89,26 +106,28 @@ class PlayPick(object):
     self.max_turn = not is_max
     
   def play(self):
-    print(self.game.state)
+    turns_counter = 0
     while not self.game.state.is_finished():
+      turns_counter += 1
+      print(f'----- TURN NUMBER: {turns_counter} -----\n')
       self.max_min_move(self.depth_max, is_max=True)
-      print(self.game.state)
+      print(f'{self.game.state}\n')
       if not self.game.state.is_finished():
         self.max_min_move(self.depth_min, is_max=False)
-        print(self.game.state)
+        print(f'{self.game.state}\n')
     result = self.h(self.game.state)
     print(f'searched min states: {self.searched_states_min}')
     print(f'searched max states: {self.searched_states_max}')
     if result == 1000:
-      print(f'MAX with depth={self.depth_max} won vs MIN with depth={self.depth_min}')
+      print(f'MAX (1) with depth={self.depth_max} won vs MIN (2) with depth={self.depth_min}')
       return (1, self.searched_states_max, self.searched_states_min)
     elif result == -1000:
-      print(f'MIN with depth={self.depth_min} won vs MAX with depth={self.depth_max}')
+      print(f'MIN (2) with depth={self.depth_min} won vs MAX (1) with depth={self.depth_max}')
       return (-1, self.searched_states_max, self.searched_states_min)
     else:
-      print(f'Draw between: MAX with depth={self.depth_max} and MIN with depth={self.depth_min}')
+      print(f'Draw between: MAX (1) with depth={self.depth_max} and MIN (2) with depth={self.depth_min}')
       return (0, self.searched_states_max, self.searched_states_min)
 
 if __name__ == '__main__':
-  gameplay = PlayPick(depth_min=5, depth_max=7)
+  gameplay = PlayPick(depth_min=6, depth_max=6)
   gameplay.play()
