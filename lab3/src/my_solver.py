@@ -3,7 +3,7 @@ from math import inf
 from itertools import combinations
 from random import randint, choice
 import copy
-from time import sleep
+import numpy as np
 
 PATH = "/Users/janekkuc/Desktop/PW/Sem7/WSI/wsi22Z-kuc/lab3/two-player-games"
 sys.path.append(PATH)
@@ -23,7 +23,7 @@ class PlayPick(object):
     
   def minimax_ab(self, state, depth, is_maximizing, alpha=-inf, beta=inf):
     if depth == 0 or state.is_finished():
-      return (self.h(state, is_maximizing), None)
+      return (self.h(state, self.max_turn, depth), None)
     
     moves = state.get_moves()
     values = []
@@ -38,8 +38,8 @@ class PlayPick(object):
         values.append(alpha)
         if alpha >= beta:
           break
-      turn_choice = self.choose_move(values, alpha)
-      return (alpha, moves[turn_choice])
+      turn_choice = self.choose_move(values, max(values))
+      return (max(values), moves[turn_choice])
     else:
       value = inf
       for move in moves:
@@ -50,8 +50,8 @@ class PlayPick(object):
         values.append(beta)
         if alpha >= beta:
           break
-      turn_choice = self.choose_move(values, beta)
-      return (beta, moves[turn_choice])
+      turn_choice = self.choose_move(values, min(values))
+      return (min(values), moves[turn_choice])
     
   def choose_move(self, moves, value):
     same_moves = [i for i, v in enumerate(moves) if v == value]
@@ -64,14 +64,16 @@ class PlayPick(object):
     else:
       self.searched_states_min += 1
     
-  def h(self, state, is_max=True):
+  def h(self, state, is_max, depth):
+    if is_max: eval_factor = (self.depth_max-depth)
+    else: eval_factor = self.depth_min-depth
     if state.is_finished():
       winner = state.get_winner()
       if winner is not None:
         if winner.char == '1':
-          return 1000
+          return 1000-eval_factor
         else:
-          return -1000
+          return -1000+eval_factor
       else:
         return 0
     elif len(state.current_player_numbers) < state.n-1:
@@ -81,6 +83,16 @@ class PlayPick(object):
       opposite_player_wins = self.heur_eval(state, False)
       if is_max: return current_player_wins - opposite_player_wins
       else: return -(current_player_wins - opposite_player_wins)
+      
+  def end_eval(self, state):
+    winner = state.get_winner()
+    if winner is not None:
+      if winner.char == '1':
+        return 1000
+      else:
+        return -1000
+    else:
+      return 0
   
   def heur_eval(self, state, current):
     if current: numbers = state.current_player_numbers
@@ -101,8 +113,7 @@ class PlayPick(object):
       self.game.state = self.game.state.make_move(move)
     else:
       moves = self.game.state.get_moves()
-      rand_move_ind = randint(0, len(moves)-1)
-      self.game.state = self.game.state.make_move(rand_move_ind)
+      self.game.state = self.game.state.make_move(choice(moves))
     self.max_turn = not is_max
     
   def play(self):
@@ -115,19 +126,34 @@ class PlayPick(object):
       if not self.game.state.is_finished():
         self.max_min_move(self.depth_min, is_max=False)
         print(f'{self.game.state}\n')
-    result = self.h(self.game.state)
+    result = self.end_eval(self.game.state)
     print(f'searched min states: {self.searched_states_min}')
     print(f'searched max states: {self.searched_states_max}')
     if result == 1000:
-      print(f'MAX (1) with depth={self.depth_max} won vs MIN (2) with depth={self.depth_min}')
-      return (1, self.searched_states_max, self.searched_states_min)
+      print(f'MAX (1) with depth={self.depth_max} won vs MIN (2) with depth={self.depth_min}\n')
+      return (1, self.searched_states_min, self.searched_states_max)
     elif result == -1000:
-      print(f'MIN (2) with depth={self.depth_min} won vs MAX (1) with depth={self.depth_max}')
-      return (-1, self.searched_states_max, self.searched_states_min)
+      print(f'MIN (2) with depth={self.depth_min} won vs MAX (1) with depth={self.depth_max}\n')
+      return (-1, self.searched_states_min, self.searched_states_max)
     else:
-      print(f'Draw between: MAX (1) with depth={self.depth_max} and MIN (2) with depth={self.depth_min}')
-      return (0, self.searched_states_max, self.searched_states_min)
+      print(f'Draw between: MAX (1) with depth={self.depth_max} and MIN (2) with depth={self.depth_min}\n')
+      return (0, self.searched_states_min, self.searched_states_max)
 
 if __name__ == '__main__':
-  gameplay = PlayPick(depth_min=6, depth_max=6)
-  gameplay.play()
+  
+  NUM_OF_SIM = 200
+  
+  DEPTH_MIN = 4
+  DEPTH_MAX = -1
+  
+  save = np.zeros((NUM_OF_SIM, 3))
+  
+  for i in range(NUM_OF_SIM):
+    gameplay = PlayPick(depth_min=DEPTH_MIN, depth_max=DEPTH_MAX)
+    save[i] = gameplay.play()
+  
+  print(f'MAX wins count: {(save[:,0] == 1).sum()}')
+  print(f'MIN wins count: {(save[:,0] == -1).sum()}')
+  print(f'draws count: {(save[:,0] == 0).sum()}')
+  print(f'average searched states MIN: {np.mean(save[:,1])}')
+  print(f'average searched states MAX: {np.mean(save[:,2])}')
