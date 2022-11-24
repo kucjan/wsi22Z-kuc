@@ -1,18 +1,27 @@
 import sys
 from math import inf
-from itertools import combinations
-from random import randint, choice
+from random import choice
 import copy
 import numpy as np
+from heuristics import h_pick
 
+# give an absolute path to submodule: two-player-games
 PATH = "/Users/janekkuc/Desktop/PW/Sem7/WSI/wsi22Z-kuc/lab3/two-player-games"
 sys.path.append(PATH)
 
 from two_player_games.games.Pick import *
 
-class PlayPick(object):
-  def __init__(self, depth_min, depth_max):
-    self.game = Pick()
+class PlayGame(object):
+  """Class that is used to simulate gameplay of given type game with minimax algorithm (with alpha-beta pruning)
+
+  Args:
+      game (Game): type of game that should be played
+      depth_min (int): depth of player MIN in minimax algorithm
+      depth_max (int): depth of player MAX in minimax algorithm
+  """
+  def __init__(self, game, heuristic, depth_min, depth_max):
+    self.game = game
+    self.h = heuristic
     self.searched_states_min = 0
     self.searched_states_max = 0
     self.min_selected_numbers = []
@@ -22,8 +31,20 @@ class PlayPick(object):
     self.max_turn = True
     
   def minimax_ab(self, state, depth, is_maximizing, alpha=-inf, beta=inf):
+    """Recursive method to perform minimax algorithm with alpha-beta pruning
+
+    Args:
+        state (State): actual game state
+        depth (int): actual searching depth
+        is_maximizing (bool): if maximizing player is playing now
+        alpha (float, optional): initial alpha value; Defaults to -inf.
+        beta (float, optional): initial beta value; Defaults to inf.
+
+    Returns:
+        best value and move for given player and state
+    """
     if depth == 0 or state.is_finished():
-      return (self.h(state, self.max_turn, depth), None)
+      return (self.h(state, self.max_turn, depth, self.depth_min, self.depth_max), None)
     
     moves = state.get_moves()
     values = []
@@ -54,6 +75,7 @@ class PlayPick(object):
       return (min(values), moves[turn_choice])
     
   def choose_move(self, moves, value):
+    """Method to choose random move if there are few moves with same value"""
     same_moves = [i for i, v in enumerate(moves) if v == value]
     return choice(same_moves)
     
@@ -63,28 +85,9 @@ class PlayPick(object):
       self.searched_states_max += 1
     else:
       self.searched_states_min += 1
-    
-  def h(self, state, is_max, depth):
-    if is_max: eval_factor = (self.depth_max-depth)
-    else: eval_factor = self.depth_min-depth
-    if state.is_finished():
-      winner = state.get_winner()
-      if winner is not None:
-        if winner.char == '1':
-          return 1000-eval_factor
-        else:
-          return -1000+eval_factor
-      else:
-        return 0
-    elif len(state.current_player_numbers) < state.n-1:
-      return 0
-    else:
-      current_player_wins = self.heur_eval(state, True)
-      opposite_player_wins = self.heur_eval(state, False)
-      if is_max: return current_player_wins - opposite_player_wins
-      else: return -(current_player_wins - opposite_player_wins)
       
   def end_eval(self, state):
+    """Method to perform final scoreevaluation"""
     winner = state.get_winner()
     if winner is not None:
       if winner.char == '1':
@@ -93,19 +96,9 @@ class PlayPick(object):
         return -1000
     else:
       return 0
-  
-  def heur_eval(self, state, current):
-    if current: numbers = state.current_player_numbers
-    else: numbers = state.other_player_numbers
-    options = list(combinations(numbers, state.n-1))
-    wins = set()
-    for option in options:
-      winning_number = state.aim_value - sum(option)
-      if winning_number not in state.selected_numbers and (0 < winning_number <= state.max_number):
-        wins.add(winning_number)
-    return len(wins)
     
   def max_min_move(self, depth, is_max):
+    """Method to execute single move of player"""
     if depth >= 0:
       value, move = self.minimax_ab(state=self.game.state, depth=depth, is_maximizing=is_max)
       print(value)
@@ -118,6 +111,7 @@ class PlayPick(object):
     self.max_turn = not is_max
     
   def play(self):
+    """Method to simulate single game play"""
     turns_counter = 0
     while not self.game.state.is_finished():
       turns_counter += 1
@@ -150,7 +144,7 @@ if __name__ == '__main__':
   save = np.zeros((NUM_OF_SIM, 3))
   
   for i in range(NUM_OF_SIM):
-    gameplay = PlayPick(depth_min=DEPTH_MIN, depth_max=DEPTH_MAX)
+    gameplay = PlayGame(game=Pick(), heuristic=h_pick, depth_min=DEPTH_MIN, depth_max=DEPTH_MAX)
     save[i] = gameplay.play()
   
   print(f'MAX wins count: {(save[:,0] == 1).sum()}')
