@@ -114,6 +114,7 @@ class PlayPick(object):
     else:
       moves = self.game.state.get_moves()
       self.game.state = self.game.state.make_move(choice(moves))
+      self.count_states()
     self.max_turn = not is_max
     
   def play(self):
@@ -141,10 +142,10 @@ class PlayPick(object):
 
 if __name__ == '__main__':
   
-  NUM_OF_SIM = 200
+  NUM_OF_SIM = 1
   
-  DEPTH_MIN = 4
-  DEPTH_MAX = -1
+  DEPTH_MIN = 3
+  DEPTH_MAX = 5
   
   save = np.zeros((NUM_OF_SIM, 3))
   
