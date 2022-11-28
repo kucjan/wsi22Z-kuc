@@ -1,0 +1,3 @@
+[submodule "lab3/src/two-player-games"]
+	path = lab3/two-player-games
+	url = https://github.com/lychanl/two-player-games.git
