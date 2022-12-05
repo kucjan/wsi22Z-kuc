@@ -1,16 +1,20 @@
 from solver import Solver
 import numpy as np
-import pandas as pd
 from process_data import process_data
+import json
+import pprint
+from copy import deepcopy
 
 class SolverID3(Solver):
   
-  def __init__(self, dataset, label):
+  def __init__(self, dataset, label, max_depth):
     # dataset split: 60% x 20% x 20%
     self.train_data, self.valid_data, self.test_data = np.split(dataset.sample(frac=1),
                                                                 [int(.6*len(dataset)),
                                                                  int(.8*len(dataset))])
-    self.label = label # string
+    self.label = label
+    self.max_depth = max_depth
+    self.current_depth = 0
     self.class_list = dataset[label].unique()
     self.tree = {}
     
@@ -20,8 +24,23 @@ class SolverID3(Solver):
   def fit(self, X, y):
     return super().fit(X, y)
   
-  def predict(self, X):
-    return super().predict(X)
+  def predict(self, X, tree):
+    predictions = []
+    for index, row in X.iterrows():
+      print(f'row: {row}')
+      tree_copy = deepcopy(tree)
+      if not isinstance(tree_copy, dict):
+        predictions.append(tree_copy)
+      else:
+        root_node = next(iter(tree_copy))
+        print(root_node)
+        attr_value = row[root_node]
+        if attr_value in tree_copy[root_node]:
+          return self.predict(row, tree_copy[root_node][attr_value])
+        else:
+          return None
+    return predictions
+      
   
   def calc_dataset_entropy(self):
     row_count = self.train_data.shape[0]
@@ -123,9 +142,11 @@ class SolverID3(Solver):
         root[best_attr] = attr_tree
         next_root = root[best_attr]
         
+      self.current_depth += 1
+        
       for node, branch in next_root.items():
         # check if branch is expandable
-        if branch == '?':
+        if branch == '?' and self.current_depth <= self.max_depth:
           self.train_data = self.train_data[self.train_data[best_attr] == node]
           self.id3(next_root, node)
 
@@ -141,8 +162,16 @@ if __name__ == '__main__':
   
   dataset = process_data(FILENAME, non_discrete_attrs)
   
-  id3_solver = SolverID3(dataset, 'cardio')
+  id3_solver = SolverID3(dataset, 'cardio', max_depth=10)
   
   id3_solver.id3(id3_solver.tree, None)
   
   print(id3_solver.tree)
+  
+  pprint.pprint(id3_solver.tree, indent=4)
+  
+  print(id3_solver.test_data.iloc[:2,:])
+  
+  preds = id3_solver.predict(id3_solver.test_data.iloc[:2,:], id3_solver.tree)
+  
+  print(preds)
