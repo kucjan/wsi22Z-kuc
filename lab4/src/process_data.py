@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from random import shuffle
 
 def process_data(filename, non_discrete_attrs):
   dataset = pd.read_csv(filename, delimiter=';')
