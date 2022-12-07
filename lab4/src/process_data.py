@@ -4,6 +4,7 @@ import numpy as np
 def process_data(filename, non_discrete_attrs):
   dataset = pd.read_csv(filename, delimiter=';')
   dataset = dataset.drop('id', axis=1)
+  print(dataset.hist())
   for name, bins in non_discrete_attrs.items():
     dataset[name] = pd.cut(dataset[name], bins, right=False, labels=range(0, len(bins)-1))
     
