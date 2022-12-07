@@ -1,9 +1,10 @@
 from solver import Solver
 import numpy as np
 import pandas as pd
-from process_data import process_data
-import pprint
-from random import randint
+from process_data import process_data, dataset_split
+import matplotlib.pyplot as plt
+from math import inf
+from statistics import mean
 from copy import deepcopy
 
 class ID3Tree(Solver):
@@ -15,14 +16,21 @@ class ID3Tree(Solver):
     self.label = ''
     
   def get_parameters(self):
-    return super().get_parameters()
+    params = {
+      'max_depth': self.max_depth,
+      'tree': self.tree,
+      'classes': self.classes,
+      'label': self.label
+    }
+    
+    return params
   
   def fit(self, X, y, label):
     train_data = pd.concat([X, y], axis=1)
     train_data_copy = deepcopy(train_data)
     self.label = label
     self.classes = train_data[label].unique()
-    tree = {}
+    tree = deepcopy(self.tree)
     self.id3(tree, None, train_data_copy, current_depth=0)
     
     self.tree = tree
@@ -63,7 +71,7 @@ class ID3Tree(Solver):
     for c in self.classes:
       class_count = data_part[data_part[self.label] == c].shape[0]
       class_prob = class_count / row_count
-      class_entropy = - (class_prob)*np.log2(class_prob)
+      class_entropy = - (class_prob) * np.log(class_prob)
       dataset_entropy += class_entropy
     
     return dataset_entropy
@@ -79,7 +87,7 @@ class ID3Tree(Solver):
       class_entropy = 0
       if class_count > 0:
         class_prob = class_count / attr_value_count
-        class_entropy = - (class_prob)*np.log2(class_prob)
+        class_entropy = - (class_prob) * np.log(class_prob)
       entropy += class_entropy
     
     return entropy
@@ -147,9 +155,11 @@ class ID3Tree(Solver):
     
   def id3(self, node, prev_attr_value, data_part, current_depth):
     if data_part.shape[0] != 0:
-      prev_data_part = data_part
+      print(node)
       # find most informative attribute
       best_attr = self.find_best_attr(data_part)
+      
+      # print(f'current depth= {current_depth}, max_depth= {self.max_depth}, best_attr: {best_attr}')
       
       # create subtree for given attribute in node
       attr_tree, data_part = self.subtree(best_attr, data_part)
@@ -166,53 +176,70 @@ class ID3Tree(Solver):
 
       for attr_value, class_label in new_node.items():
         # check if node is expandable
-        if class_label == '?' and current_depth <= self.max_depth:
+        if class_label == '?':
           attr_value_data = data_part[data_part[best_attr] == attr_value]
-          current_depth += 1
-          self.id3(new_node, attr_value, attr_value_data, current_depth)
-        elif class_label == '?' and current_depth > self.max_depth:
-          # count most labels
-          class_count = data_part[self.label].value_counts(sort=True)
-          new_node[attr_value] = class_count.keys()[0]          
+          if current_depth < self.max_depth:
+            current_depth += 1
+            self.id3(new_node, attr_value, attr_value_data, current_depth)
+          else:
+            # count most labels
+            class_count_dict = attr_value_data[self.label].value_counts(sort=True)
+            new_node[attr_value] = class_count_dict.keys()[0]
 
 if __name__ == '__main__':
   
+  # give an absolute path to file with dataset
   FILENAME = '/Users/janekkuc/Desktop/PW/Sem7/WSI/wsi22Z-kuc/lab4/data/cardio_train.csv'
   
-  non_discrete_attrs = {'age': [9125, 12775, 15330, 17520, 20075, 21900, 23725, 25550],
-                      'weight': [0, 20, 40, 60, 90, 120, 150, 200],
-                      'height': [40, 80, 120, 150, 170, 190, 205, 250],
-                      'ap_hi': [-500, 800, 2000, 5000, 8000, 11000, 14000, 17000],
-                      'ap_lo': [-300, 600, 1400, 3300, 6000, 8200, 10000, 13000]}
-
-  dataset = process_data(FILENAME, non_discrete_attrs)
-
-  # dataset split: 60% x 20% x 20%
-  train_data, valid_data, test_data = np.split(dataset.sample(frac=1),
-                                                            [int(.6*len(dataset)),
-                                                              int(.8*len(dataset))])
+  non_discrete_attrs = {'age': [-inf, 7300, 10950, 14600, 18250, 20075, 21900, 23725, 25550, inf],
+                      'weight': [-inf, 50, 70, 90, 110, 130, inf],
+                      'height': [-inf, 120, 150, 170, 190, 205, inf],
+                      'ap_hi': [-inf, 120, 130, 140, 160, 180, inf],
+                      'ap_lo': [-inf, 80, 85, 90, 100, 110, inf]}
+  
   label = 'cardio'
 
-  train_data_X = train_data.drop(label, axis=1); train_data_y = train_data[label]
-  valid_data_X = valid_data.drop(label, axis=1); valid_data_y = valid_data[label]
-  test_data_X = test_data.drop(label, axis=1); test_data_y = test_data[label]
-
-  decision_tree = ID3Tree(max_depth=8)
+  dataset = process_data(FILENAME, non_discrete_attrs)
   
-  decision_tree.fit(X=train_data_X, y=train_data_y, label=label)
+  # DEPTHS = [5, 8, 10, 14, 18, 22, 28, 35]
+  DEPTHS = [5]
+  SPLITS = 1
   
-  print(decision_tree.tree)
+  save_params = []
+  mean_accs_train = []
+  mean_accs_valid = []
   
-  pprint.pprint(decision_tree.tree, indent=1)
+  for i in range(SPLITS):
+    train_data_X, train_data_y, valid_data_X, valid_data_y, test_data_X, test_data_y = dataset_split(dataset, label)
+    split_accs_train = []
+    split_accs_valid = []
+    for depth in DEPTHS:
+      decision_tree = ID3Tree(max_depth=depth)
+      
+      decision_tree.fit(X=train_data_X, y=train_data_y, label=label)
+      
+      accuracy_train = decision_tree.evaluate(X=train_data_X, y=train_data_y, tree_copy=deepcopy(decision_tree.tree))
+      split_accs_train.append(accuracy_train)
+      print(f'Accuracy train: {accuracy_train}')
+      
+      accuracy_valid = decision_tree.evaluate(X=valid_data_X, y=valid_data_y, tree_copy=deepcopy(decision_tree.tree))
+      split_accs_valid.append(accuracy_valid)
+      print(f'Accuracy valid: {accuracy_valid}')
+      
+      save_params.append(decision_tree.get_parameters())
+      
+    mean_accs_train.append(mean(split_accs_train))
+    mean_accs_valid.append(mean(split_accs_valid))
+    print(f'Mean accs (train, valid): {mean_accs_train}, {mean_accs_valid}')
   
-  # preds = decision_tree.predict(test_data_X, deepcopy(decision_tree.tree))
+  plt.figure()
+  plt.plot(DEPTHS, mean_accs_train, 'b', label='training data')
+  plt.plot(DEPTHS, mean_accs_valid, 'r', label='validation data')
+  plt.legend(loc='upper left')
+  plt.xlabel('max depths')
+  plt.ylabel('accuracy')
+  # plt.xlim(DEPTHS[0], DEPTHS[-1])
+  # plt.ylim(0, 1)
+  plt.show()
   
-  # print(preds)
-  
-  print(test_data_y.iloc[0])
-  row_predict = decision_tree.predict_row(test_data_X.iloc[0], deepcopy(decision_tree.tree))
-  print(row_predict)
-  
-  accuracy = decision_tree.evaluate(X=test_data_X, y=test_data_y, tree_copy=deepcopy(decision_tree.tree))
-  
-  print(accuracy)
+  print(save_params)
