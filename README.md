@@ -5,8 +5,8 @@ This repository contains Python codes and reports for projects related to AI/ML 
 ## Contents
 
 Each task directory contains:
-- `src`: directory containing Python scripts for the projects
-- `report`: directory containing reports for the projects in PDF or .ipynb format
+- `src`: directory containing Python scripts for the project
+- `report`: directory containing report for the project in PDF or .ipynb format
 
 The following topics are covered in each task: 
   1. Gradient descent algorithm
