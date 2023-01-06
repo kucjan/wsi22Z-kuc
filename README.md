@@ -17,5 +17,5 @@ The following topics are covered in each task:
 
 ## Credits
 
-- Author: [Jan Kuc]
+- Author: Jan Kuc
 - Course: Wstęp do sztucznej inteligencji (WUT)
