@@ -15,8 +15,12 @@ class Agent:
         max_next_q = np.max(self.qtable[next_state])
 
         self.qtable[curr_state, action] = curr_q + self.alpha * (
-            step_reward * self.gamma * max_next_q - curr_state
+            step_reward + self.gamma * max_next_q - curr_q
         )
+
+    def __best_action(self, state_qtable):
+        all_best_actions = np.argwhere(state_qtable == np.amax(state_qtable))
+        return choice(all_best_actions.flatten().tolist())
 
     def explore(self, curr_state):
         if random() < self.eps:
@@ -24,8 +28,8 @@ class Agent:
         else:
             return np.argmax(self.qtable[curr_state])
 
-    def choose_action(self, random_action):
+    def choose_action(self, curr_state, random_action):
         if random_action:
             return self.env.action_space.sample()
         else:
-            return np.argmax(self.qtable[self.curr_state])
+            return self.__best_action(self.qtable[curr_state])
