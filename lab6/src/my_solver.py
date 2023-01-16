@@ -5,22 +5,21 @@ class QLearningSolver:
     def __init__(self, agent, illegal_step_reward):
         self.agent = agent
         self.illegal_step_reward = illegal_step_reward
-        self.curr_state = None
 
     def train(self):
-        self.curr_state, _ = self.agent.env.reset()
+        curr_state, _ = self.agent.env.reset()
         done = False
         while not done:
-            action = self.agent.explore(self.curr_state)
+            action = self.agent.explore(curr_state)
             next_state, step_reward, terminated, truncated, _ = self.agent.env.step(
                 action
             )
-            self.agent.update_qtable(self.curr_state, action, step_reward, next_state)
-            self.curr_state = next_state
+            self.agent.update_qtable(curr_state, action, step_reward, next_state)
+            curr_state = next_state
             done = terminated or truncated
 
     def solve(self, max_iters, random_action=False):
-        self.curr_state, _ = self.agent.env.reset()
+        curr_state, _ = self.agent.env.reset()
         done = False
         steps = 0
         score = 0
@@ -31,11 +30,11 @@ class QLearningSolver:
             if i > max_iters:
                 is_solved = False
                 break
-            action = self.agent.choose_action(self.curr_state, random_action)
+            action = self.agent.choose_action(curr_state, random_action)
             next_state, step_reward, terminated, truncated, _ = self.agent.env.step(
                 action
             )
-            self.curr_state = next_state
+            curr_state = next_state
             steps += 1
             score += step_reward
             if step_reward == self.illegal_step_reward:
@@ -45,7 +44,6 @@ class QLearningSolver:
         return steps, score, illegal_steps, is_solved
 
     def evaluate(self, n_iters, n_evals, n_episodes, max_solve_iters):
-        self.curr_state, _ = self.agent.env.reset()
 
         eval_values = np.zeros((n_evals, 4))
         eval_points = []
