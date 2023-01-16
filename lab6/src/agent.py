@@ -23,3 +23,9 @@ class Agent:
             return self.env.action_space.sample()
         else:
             return np.argmax(self.qtable[curr_state])
+
+    def choose_action(self, random_action):
+        if random_action:
+            return self.env.action_space.sample()
+        else:
+            return np.argmax(self.qtable[self.curr_state])
