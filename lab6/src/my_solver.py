@@ -43,7 +43,14 @@ class QLearningSolver:
             i += 1
         return steps, score, illegal_steps, is_solved
 
-    def evaluate(self, n_iters, n_evals, n_episodes, max_solve_iters):
+    def evaluate(
+        self,
+        n_iters,
+        n_evals,
+        n_episodes,
+        max_solve_iters,
+        random_action=False,
+    ):
 
         eval_values = np.zeros((n_evals, 4))
         eval_points = []
@@ -68,7 +75,9 @@ class QLearningSolver:
             period_illegal_steps = 0
             period_solved = 0
             for episode in range(1, n_episodes + 1):
-                steps, score, illegal_steps, is_solved = self.solve(max_solve_iters)
+                steps, score, illegal_steps, is_solved = self.solve(
+                    max_solve_iters, random_action
+                )
                 period_steps += steps
                 period_scores += score
                 period_illegal_steps += illegal_steps
