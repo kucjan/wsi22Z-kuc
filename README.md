@@ -14,6 +14,7 @@ The following topics are covered in each task:
   3. Minimax algorithm
   4. ID3 decision trees algorithm
   5. Implementation of a neural network to classify data from the MNIST dataset
+  6. Q-learning algorithm with agent solving *Taxi* problem
 
 ## Credits
 
