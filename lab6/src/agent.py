@@ -26,7 +26,7 @@ class Agent:
         if random() < self.eps:
             return self.env.action_space.sample()
         else:
-            return np.argmax(self.qtable[curr_state])
+            return self.__best_action(self.qtable[curr_state])
 
     def choose_action(self, curr_state, random_action):
         if random_action:
