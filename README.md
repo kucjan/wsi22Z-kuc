@@ -15,6 +15,7 @@ The following topics are covered in each task:
   4. ID3 decision trees algorithm
   5. Implementation of a neural network to classify data from the MNIST dataset
   6. Q-learning algorithm with agent solving *Taxi* problem
+  7. Naive Bayes classifier
 
 ## Credits
 
