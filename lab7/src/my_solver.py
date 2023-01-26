@@ -41,22 +41,21 @@ class NaiveBayesSolver(Solver):
         else:
             val_mean = info[0]
             val_stdev = info[1]
-            exponent = exp(-((value - val_mean) ** 2 / (2 * val_stdev**2)))
+            exponent = exp(-0.5 * ((value - val_mean) / (val_stdev)) ** 2)
             return (1 / (sqrt(2 * pi) * val_stdev)) * exponent
 
-    def __calculate_probabilities(self, record):
+    def __calculate_probabilities(self, row):
         total_rows = sum(self.data_info[label][1] for label in self.data_info)
         probs = {}
         for label, label_info in self.data_info.items():
             probs[label] = label_info[1] / total_rows
-            for i in range(len(label_info)):
-                value = record[i]
+            for i in range(len(label_info[0])):
+                value = row[i]
                 col_name = list(label_info[0].keys())[i]
                 info = label_info[0][col_name]
                 probs[label] *= self.__calculate_value_probability(
                     value, col_name, info
                 )
-
         return probs
 
     def __predict_row(self, row):
@@ -91,7 +90,7 @@ class NaiveBayesSolver(Solver):
         return self.__calculate_accuracy(val_y, predictions)
 
     def evaluate_cross_validation(self, X_split, y_split, numerical_attrs, label):
-        accs = []
+        accs = {}
         for fold in range(len(X_split)):
             curr_split_X = copy(X_split)
             curr_split_y = copy(y_split)
@@ -99,7 +98,8 @@ class NaiveBayesSolver(Solver):
             val_y = curr_split_y.pop(fold)
             train_X = pd.concat(curr_split_X, axis=0)
             train_y = pd.concat(curr_split_y, axis=0)
-            accs.append(
-                self.evaluate(train_X, train_y, val_X, val_y, numerical_attrs, label)
+            val_acc = self.evaluate(
+                train_X, train_y, val_X, val_y, numerical_attrs, label
             )
+            accs[val_acc] = (train_X, train_y, val_X, val_y)
         return accs

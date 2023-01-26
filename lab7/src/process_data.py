@@ -65,7 +65,7 @@ def cross_validation_split(dataset, label, n_folds):
     y = dataset[label]
 
     cross_data_X, test_data_X, cross_data_y, test_data_y = train_test_split(
-        X, y, test_size=0.2
+        X, y, test_size=0.2, shuffle=True
     )
 
     dataset_split_X = []
@@ -73,7 +73,7 @@ def cross_validation_split(dataset, label, n_folds):
     fold_size = int(len(cross_data_X) / n_folds)
 
     for i in range(0, len(cross_data_X), fold_size):
-        dataset_split_X.append(cross_data_X[i : i + fold_size])
-        dataset_split_y.append(cross_data_y[i : i + fold_size])
+        dataset_split_X.append(cross_data_X.iloc[i : i + fold_size])
+        dataset_split_y.append(cross_data_y.iloc[i : i + fold_size])
 
     return dataset_split_X, dataset_split_y, test_data_X, test_data_y
