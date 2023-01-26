@@ -84,7 +84,6 @@ class NaiveBayesSolver(Solver):
         self.__calculate_data_info(train_data)
 
     def evaluate(self, train_X, train_y, val_X, val_y, numerical_attrs, label):
-        self.data_info = {}
         self.fit(train_X, train_y, numerical_attrs, label)
         predictions = self.predict(val_X)
         return self.__calculate_accuracy(val_y, predictions)

@@ -37,18 +37,18 @@ def missing_values(dataset, space_to_nan, drop_empty):
     return dataset, missing_values_columns
 
 
-def dataset_split(dataset, label):
-    # dataset split: 60% x 20% x 20%
-    train_data, valid_data, test_data = np.split(
-        dataset.sample(frac=1), [int(0.6 * len(dataset)), int(0.8 * len(dataset))]
+def dataset_split(dataset, label, train_size=0.6):
+
+    X = dataset.drop(label, axis=1)
+    y = dataset[label]
+
+    train_data_X, temp_data_X, train_data_y, temp_data_y = train_test_split(
+        X, y, test_size=1 - train_size
     )
 
-    train_data_X = train_data.drop(label, axis=1)
-    train_data_y = train_data[label]
-    valid_data_X = valid_data.drop(label, axis=1)
-    valid_data_y = valid_data[label]
-    test_data_X = test_data.drop(label, axis=1)
-    test_data_y = test_data[label]
+    valid_data_X, test_data_X, valid_data_y, test_data_y = train_test_split(
+        temp_data_X, temp_data_y, test_size=0.5
+    )
 
     return (
         train_data_X,
@@ -60,12 +60,12 @@ def dataset_split(dataset, label):
     )
 
 
-def cross_validation_split(dataset, label, n_folds):
+def cross_validation_split(dataset, label, n_folds, train_size=0.6):
     X = dataset.drop(label, axis=1)
     y = dataset[label]
 
     cross_data_X, test_data_X, cross_data_y, test_data_y = train_test_split(
-        X, y, test_size=0.2, shuffle=True
+        X, y, test_size=(1 - train_size) / 2, shuffle=True
     )
 
     dataset_split_X = []
